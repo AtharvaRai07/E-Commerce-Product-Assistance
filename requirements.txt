@@ -10,6 +10,7 @@ langchain-groq==0.3.6
 lxml==6.0.1
 python-dotenv==1.1.1
 python-multipart==0.0.20
+langchain_cohere
 selenium==4.35.0
 streamlit==1.49.1
 undetected-chromedriver==3.5.5
