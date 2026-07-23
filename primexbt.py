@@ -22,8 +22,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 FORM_URL = (
-    "https://docs.google.com/forms/d/e/"
-    "1FAIpQLSdGR2LQzUk2b62tJOJLeLodBamoAh4rmNmAsexROCBK-7tksg/viewform"
+    "https://docs.google.com/forms/d/e/1FAIpQLScqWxj8OTBWpf3aJGV5frfPrZ0W3vINkPKcbt1_XdHAcyPE3w/viewform"
 )
 
 # Map: a substring of the question's visible label -> the answer to type in.
@@ -32,9 +31,9 @@ FORM_URL = (
 # correctly in your DB/Excel export.
 FIELD_VALUES = {
     "Your name": "Madhuri Kumari",
-    "Prime XBT UID": "2589960",
-    "Prime XBT USDT BEP-20 Wallet Address": "0x71239D1d1D2cF6eAa6A27FfA00Bc32806Ab2ea71",
-}   
+    "Prime XBT UID": "2608577",
+    "Prime XBT USDT BEP-20 Wallet Address": "0x10930AeBB57E853714ab7A7cEaa3d2a566F98Fd1",
+}
 
 
 def set_field_value(driver, element, value):
