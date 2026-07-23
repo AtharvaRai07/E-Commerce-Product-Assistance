@@ -3,8 +3,8 @@ import sys
 import pathlib
 from dotenv import load_dotenv
 from langchain_astradb import AstraDBVectorStore
-from utils.model_loader import ModelLoader
-from utils.config_loader import load_config
+from prod_assistance.utils.model_loader import ModelLoader
+from prod_assistance.utils.config_loader import load_config
 
 from prod_assistance.logger import GLOBAL_LOGGER
 from prod_assistance.exception.custom_exception import ProductAssistanceException
@@ -23,14 +23,14 @@ class Retriever:
         try:
             load_dotenv()
 
-            required_vars = ["GOOGLE_API_KEY", "ASTRA_DB_API_ENDPOINT", "ASTRA_DB_APPLICATION_TOKEN", "ASTRA_DB_KEYSPACE"]
+            required_vars = ["GROQ_API_KEY", "ASTRA_DB_API_ENDPOINT", "ASTRA_DB_APPLICATION_TOKEN", "ASTRA_DB_KEYSPACE"]
 
             missing_vars = [var for var in required_vars if os.getenv(var) is None]
 
             if missing_vars:
                 raise EnvironmentError(f"Missing environment variables: {missing_vars}")
 
-            self.google_api_key = os.getenv("GOOGLE_API_KEY")
+            self.groq_api_key = os.getenv("GROQ_API_KEY")
             self.db_api_endpoint = os.getenv("ASTRA_DB_API_ENDPOINT")
             self.db_application_token = os.getenv("ASTRA_DB_APPLICATION_TOKEN")
             self.db_keyspace = os.getenv("ASTRA_DB_KEYSPACE")
