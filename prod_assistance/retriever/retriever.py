@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 from langchain_astradb import AstraDBVectorStore
 from prod_assistance.utils.model_loader import ModelLoader
 from prod_assistance.utils.config_loader import load_config
+from langchain_classic.retrievers import ContextualCompressionRetriever
+from langchain_classic.retrievers.document_compressors import LLMChainFilter
 
 from prod_assistance.logger import GLOBAL_LOGGER
 from prod_assistance.exception.custom_exception import ProductAssistanceException
@@ -57,7 +59,21 @@ class Retriever:
             if not self.retriever:
                 top_k = self.config['retriever']['top_k'] if "retriever" in self.config else 3
                 search_type = self.config['retriever']['search_type'] if "retriever" in self.config else "similarity"
-                self.retriever = self.vstore.as_retriever(search_kwargs={"search_type": search_type, "k": top_k})
+
+                mmr_retriever = self.vstore.as_retriever(search_kwargs={
+                    "search_type": "mmr",
+                    "k": top_k,
+                    "fetch_k": 20,
+                    "lambda_mult": 0.7
+                })
+
+                llm = self.model_loader.load_llm()
+                compressor = LLMChainFilter.from_llm(llm)
+
+                self.retriever = ContextualCompressionRetriever(
+                    base_compressor=compressor,
+                    base_retriever=mmr_retriever
+                )
 
                 logger.info("Retriever loaded successfully.")
 
