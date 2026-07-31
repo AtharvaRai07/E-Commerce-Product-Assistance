@@ -19,7 +19,7 @@ async def lifespan(app: FastAPI):
     await rag_agent.initialize()
     print("AgenticRAG initialized successfully!")
 
-    yield 
+    yield
 
     print("Closing AgenticRAG...")
     await rag_agent.close()
@@ -53,5 +53,4 @@ async def chat(msg: str = Form(...)):
     print(f"Agentic Response: {answer}")
     return answer
 
-if __name__ == "__main__":
-    uvicorn.run(app, host="localhost", port=8080, log_level="info")
+
