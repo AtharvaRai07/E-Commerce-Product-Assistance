@@ -4,6 +4,8 @@ packages = [
     "langchain",
     "langchain_core",
     "python-dotenv",
+    "langchain_mcp_adapters",
+    "mcp"
 ]
 
 for pkg in packages:

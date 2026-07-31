@@ -5,8 +5,10 @@ from dotenv import load_dotenv
 from langchain_astradb import AstraDBVectorStore
 from prod_assistance.utils.model_loader import ModelLoader
 from prod_assistance.utils.config_loader import load_config
+from prod_assistance.evaluation.ragas_eval import evaluate_context_precision, evaluate_answer_relevancy
 from langchain_classic.retrievers import ContextualCompressionRetriever
 from langchain_classic.retrievers.document_compressors import LLMChainFilter
+
 
 from prod_assistance.logger import GLOBAL_LOGGER
 from prod_assistance.exception.custom_exception import ProductAssistanceException
@@ -53,29 +55,29 @@ class Retriever:
                     collection_name=collection_name,
                     api_endpoint=self.db_api_endpoint,
                     token=self.db_application_token,
-                    keyspace=self.db_keyspace
+                    namespace=self.db_keyspace
                 )
 
             if not self.retriever:
                 top_k = self.config['retriever']['top_k'] if "retriever" in self.config else 3
                 search_type = self.config['retriever']['search_type'] if "retriever" in self.config else "similarity"
 
-                mmr_retriever = self.vstore.as_retriever(search_kwargs={
+                self.retriever = self.vstore.as_retriever(search_kwargs={
                     "search_type": "mmr",
                     "k": top_k,
                     "fetch_k": 20,
-                    "lambda_mult": 0.7
+                    "lambda_mult": 0.7,
+                    "score_threshold": 0.6
                 })
 
-                llm = self.model_loader.load_llm()
-                compressor = LLMChainFilter.from_llm(llm)
+                # llm = self.model_loader.load_llm()
+                # compressor = LLMChainFilter.from_llm(llm)
 
-                self.retriever = ContextualCompressionRetriever(
-                    base_compressor=compressor,
-                    base_retriever=mmr_retriever
-                )
-
-                logger.info("Retriever loaded successfully.")
+                # self.retriever = ContextualCompressionRetriever(
+                #     base_compressor=compressor,
+                #     base_retriever=mmr_retriever
+                # )
+                logger.info(f"Retriever loaded with top_k={top_k}, search_type={search_type}, lambda_mult=0.7, score_threshold=0.6.")
 
         except Exception as e:
             logger.error(f"Error loading retriever: {e}")
@@ -84,10 +86,9 @@ class Retriever:
     def call_retriever(self, query):
         try:
             if not self.retriever:
-                raise ProductAssistanceException("Retriever is not loaded. Please call load_retriever() first.")
+                self.load_retriever()
 
-            retriever = self.load_retriever()
-            results = retriever.invoke(query)
+            results = self.retriever.invoke(query)
 
             logger.info(f"Retriever called successfully for query: {query} with results: {results}")
 
@@ -99,8 +100,36 @@ class Retriever:
 
 if __name__ == "__main__":
     retriever_obj = Retriever()
-    user_query = "Can you suggest some good budget laptops"
-    results = retriever_obj.call_retriever(user_query)
+    user_query = "What are the features of Iphone 17pro"
+    retrieved_docs = retriever_obj.call_retriever(user_query)
+    print("\n\n--\n\n", retrieved_docs)
+    def _format_docs(docs) -> str:
+        formatted_chunks = []
 
-    for idx, doc in enumerate(results):
-        print(f"Result {idx + 1}: {doc.page_content} \nMetadata:\n {doc.metadata}\n ")
+        if not docs:
+            return "No relevant documents found."
+
+        for d in docs:
+            meta = d.metadata or {}
+
+            formatted = (
+                f"Title: {meta.get('product_title', 'N/A')}\n"
+                f"Price: {meta.get('price', 'N/A')}\n"
+                f"Rating: {meta.get('rating', 'N/A')}\n"
+                f"Reviews:\n{d.page_content.strip()}"
+            )
+
+            formatted_chunks.append(formatted)
+
+        return "\n\n---\n\n".join(formatted_chunks)
+
+    retrieved_context = [_format_docs(retrieved_docs) for doc in retrieved_docs]
+
+    response="iphone 16 plus, iphone 16, iphone 15 are best phones under 1,00,000 INR."
+
+    context_score = evaluate_answer_relevancy(user_query, response, retrieved_context)
+    relevancy_score = evaluate_context_precision(user_query, response, retrieved_context)
+
+    print("\n--- Evaluation Metrics ---")
+    print("Context Precision Score:", context_score)
+    print("Response Relevancy Score:", relevancy_score)
